@@ -63,7 +63,8 @@ if (-not $Status -and -not (Test-IsAdmin)) {
 
             $proc = Start-Process powershell.exe -ArgumentList $argList -Verb RunAs -PassThru -ErrorAction Stop
             $proc.WaitForExit()
-            exit $proc.ExitCode
+            $global:LASTEXITCODE = $proc.ExitCode
+            return
         } catch {
             Write-Warning "Could not automatically elevate process ($($_.Exception.Message)). Attempting to proceed..."
         }
@@ -364,7 +365,8 @@ $targetDlls = Get-InstalledDllPaths
 
 if (-not $targetDlls -or $targetDlls.Count -eq 0) {
     Write-Error "No StartAllBack installation DLLs were found on this system."
-    exit 1
+    $global:LASTEXITCODE = 1
+    return
 }
 
 Write-Host "[*] Discovered StartAllBack DLL(s):" -ForegroundColor White
@@ -377,7 +379,8 @@ Write-Host ""
 
 if ($Status) {
     Write-Host "[*] Status check complete. No changes made." -ForegroundColor Cyan
-    exit 0
+    $global:LASTEXITCODE = 0
+    return
 }
 
 # Stop processes before modifying files
@@ -403,9 +406,11 @@ if ($overallSuccess) {
     $actionName = if ($Restore) { "Restoration" } else { "Patching" }
     Write-Host ""
     Write-Host "[+] $actionName completed successfully!" -ForegroundColor Green
-    exit 0
+    $global:LASTEXITCODE = 0
+    return
 } else {
     Write-Host ""
     Write-Error "One or more operations encountered errors."
-    exit 1
+    $global:LASTEXITCODE = 1
+    return
 }
