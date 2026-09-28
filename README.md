@@ -1,26 +1,17 @@
 # StartAllBack Patcher
 
-A simple PowerShell patcher for **StartAllBack** that applies a DLL modification so the app runs without a license check.
+A PowerShell patcher for **StartAllBack** that applies a DLL modification so the app runs without a license check.
 
 > **Disclaimer:** This tool is provided for educational use only. Use at your own risk. The author is not responsible for any damage or legal issues caused by its use.
-
----
-
-## What It Does
-
-- Searches for `StartAllBackX64.dll` on your system.
-- Backs up the original DLL.
-- Patches the DLL to bypass the license requirement.
-- Restarts Explorer so the changes take effect.
 
 ---
 
 ## Requirements
 
 - Windows 10 or 11
-- PowerShell
-- Administrator privileges (the script will ask for them automatically)
-- **StartAllBack version 3.​** (3.x releases are supported)
+- PowerShell 5.1+ or PowerShell Core 7+
+- Administrator privileges (requested automatically if needed)
+- **StartAllBack 3.x** releases
 
 ---
 
@@ -36,46 +27,40 @@ irm https://raw.githubusercontent.com/RezoxP/StartAllBack-Patcher/main/new.ps1 |
 
 ### Option 2: Run Downloaded File
 
-1. **Download** the latest `new.ps1` file.
+1. Download the latest `new.ps1` file.
 2. Open **PowerShell as Administrator** and run:
    ```powershell
    powershell -ExecutionPolicy Bypass -File ".\new.ps1"
    ```
-   Or simply right-click `new.ps1` and select **"Run with PowerShell"**.
-3. If prompted, click **"Yes"** for the UAC (administrator) prompt.
-4. Wait for the script to finish. You'll see:
-   - `Patch applied successfully!`
-   - Explorer will restart.
-5. Open **StartAllBack** — it should now be activated.
+   Or right-click `new.ps1` and select **"Run with PowerShell"**.
+3. If prompted, confirm the UAC prompt for Administrator rights.
+4. The patch will be applied and Explorer will restart automatically.
 
 ---
 
-## Restore Original DLL
+## Command Line Options
 
-If you want to undo the patch and restore the original file:
+| Switch | Description |
+|---|---|
+| `.\new.ps1` | Default mode: detects installed DLLs, creates `.bak` backup, applies patch, and restarts Explorer. |
+| `.\new.ps1 -Status` | Inspects and displays patch status of installed StartAllBack DLLs without making any changes. |
+| `.\new.ps1 -Restore` | Reverts patch and restores original DLL from `.bak` backup. |
+| `.\new.ps1 -Force` | Forces patch application even if version signature is unrecognized. |
+| `.\new.ps1 -NoRestart` | Prevents automatically restarting `explorer.exe` after completing. |
 
-### Option 1: One-Liner (Remote)
+### Restore Original DLL Remote One-Liner
 
 ```powershell
 & ([scriptblock]::create((irm https://raw.githubusercontent.com/RezoxP/StartAllBack-Patcher/main/new.ps1))) -Restore
 ```
 
-### Option 2: Run Downloaded File
-
-1. Open **PowerShell as Administrator**.
-2. Navigate to the folder containing `new.ps1` and run:
-   ```powershell
-   .\new.ps1 -Restore
-   ```
-3. The original DLL will be restored and Explorer will restart.
-
 ---
 
-## Safety Notes
+## Safety & Backups
 
-- The script **creates a `.bak` backup** of your original DLL before patching.
-- If something goes wrong, you can always restore using the instructions above.
-- The script temporarily disables Explorer auto-restart to prevent conflicts during patching.
+- An original backup (`.bak`) is created automatically before any modifications are written.
+- Windows Winlogon shell auto-restart is temporarily suspended during patching to prevent process restart collisions.
+- Running status checks (`-Status`) does not require Administrator rights.
 
 ---
 
@@ -83,10 +68,10 @@ If you want to undo the patch and restore the original file:
 
 | Problem | Solution |
 |---------|----------|
-| "DLL not found" | Make sure StartAllBack is installed. Try reinstalling it. |
-| "Access denied" | Run the script as Administrator. |
-| "Unknown DLL version" | Your StartAllBack version may be too new or old. Check for script updates. |
-| Explorer doesn't restart | Open Task Manager, end `explorer.exe`, then click File > Run new task > type `explorer.exe`. |
+| **"No StartAllBack installation DLLs found"** | Ensure StartAllBack is installed properly. |
+| **"Access denied"** | Run PowerShell as Administrator. |
+| **"Unknown DLL version"** | Your StartAllBack version may be unsupported. Use `-Force` to attempt patching anyway or check for repository updates. |
+| **Explorer doesn't restart** | Open Task Manager (`Ctrl+Shift+Esc`), click **Run new task**, and type `explorer.exe`. |
 
 ---
 
