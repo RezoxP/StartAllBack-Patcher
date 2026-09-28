@@ -119,10 +119,12 @@ function Find-Bytes {
 function Get-InstalledDllPaths {
     $candidatePaths = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
-    # 1. Registry Lookup (Uninstall Keys)
+    # 1. Registry Lookups (Uninstall Keys & App Keys)
     $regKeys = @(
         "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\StartAllBack",
         "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\StartAllBack",
+        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\StartAllBack",
+        "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\StartAllBack",
         "HKCU:\SOFTWARE\StartAllBack"
     )
 
@@ -138,20 +140,37 @@ function Get-InstalledDllPaths {
         }
     }
 
-    # 2. Common Directory Locations
-    $searchDirs = @(
-        (Join-Path $env:LOCALAPPDATA "StartAllBack"),
-        (Join-Path $env:ProgramFiles "StartAllBack"),
-        (Join-Path ${env:ProgramFiles(x86)} "StartAllBack"),
-        $PSScriptRoot,
-        (Join-Path $PSScriptRoot "StartAllBack")
+    # 2. Common Directory Locations (safely checking non-empty base paths)
+    $searchParents = @(
+        $env:LOCALAPPDATA,
+        $env:ProgramFiles,
+        ${env:ProgramFiles(x86)},
+        "$env:SystemDrive\Program Files",
+        "$env:SystemDrive\Program Files (x86)"
     )
 
-    foreach ($dir in $searchDirs) {
-        if ($dir -and (Test-Path $dir)) {
-            foreach ($dllName in $TargetDllNames) {
-                $fullPath = Join-Path $dir $dllName
-                if (Test-Path $fullPath) { $null = $candidatePaths.Add($fullPath) }
+    foreach ($parent in $searchParents) {
+        if ($parent -and (Test-Path $parent)) {
+            $targetDir = Join-Path $parent "StartAllBack"
+            if (Test-Path $targetDir) {
+                foreach ($dllName in $TargetDllNames) {
+                    $fullPath = Join-Path $targetDir $dllName
+                    if (Test-Path $fullPath) { $null = $candidatePaths.Add($fullPath) }
+                }
+            }
+        }
+    }
+
+    # 3. Script Root Locations (only if running from a script file on disk)
+    if ($PSScriptRoot -and (Test-Path $PSScriptRoot)) {
+        foreach ($dllName in $TargetDllNames) {
+            $directPath = Join-Path $PSScriptRoot $dllName
+            if (Test-Path $directPath) { $null = $candidatePaths.Add($directPath) }
+
+            $subDir = Join-Path $PSScriptRoot "StartAllBack"
+            if (Test-Path $subDir) {
+                $subPath = Join-Path $subDir $dllName
+                if (Test-Path $subPath) { $null = $candidatePaths.Add($subPath) }
             }
         }
     }
