@@ -228,10 +228,13 @@ function Start-ExplorerAndApps {
             Write-Warning "Failed to launch explorer.exe automatically. Please launch it from Task Manager."
         }
 
-        if ($DllPath) {
-            $cfgExe = Join-Path (Split-Path $DllPath -Parent) "StartAllBackCfg.exe"
-            if (Test-Path $cfgExe) {
-                try { Start-Process -FilePath $cfgExe -ErrorAction SilentlyContinue } catch {}
+        if ($DllPath -and (Test-Path $DllPath)) {
+            $parentDir = [System.IO.Path]::GetDirectoryName([string]$DllPath)
+            if ($parentDir -and (Test-Path $parentDir)) {
+                $cfgExe = Join-Path $parentDir "StartAllBackCfg.exe"
+                if (Test-Path $cfgExe) {
+                    try { Start-Process -FilePath $cfgExe -ErrorAction SilentlyContinue } catch {}
+                }
             }
         }
     }
@@ -361,7 +364,7 @@ function Restore-TargetDll {
 # -------------------------------------------------------------------
 Write-Header
 
-$targetDlls = Get-InstalledDllPaths
+[string[]]$targetDlls = @(Get-InstalledDllPaths)
 
 if (-not $targetDlls -or $targetDlls.Count -eq 0) {
     Write-Error "No StartAllBack installation DLLs were found on this system."
